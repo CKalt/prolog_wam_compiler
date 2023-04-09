@@ -1,3 +1,3 @@
-mod data_structures;
+pub mod data_structures;
 
 pub use data_structures::{WamEmulator, Term, HeapCell};
