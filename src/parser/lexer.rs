@@ -58,7 +58,7 @@ fn read_name<I: Iterator<Item = char>>(iter: &mut std::iter::Peekable<I>) -> Str
     name
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Atom(String),
     Variable(String),
