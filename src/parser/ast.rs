@@ -128,7 +128,7 @@ mod tests {
     } 
     
     #[test]
-    fn test_expect_token() {
+    fn test_expect_token1() {
         use super::{expect_token, ParseError, Token};
 
         let tokens = [
@@ -158,5 +158,41 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_parse_term2() {
+        use super::{parse_term, Term, Token};
+
+        // Test parsing an atom
+        let tokens = [
+            Token::Atom("hello".to_string()),
+            Token::Variable("Var".to_string()),
+            Token::LParen,
+        ];
+        let expected_term = Term::Atom("hello".to_string());
+        let remaining_tokens = &tokens[1..];
+        match parse_term(&tokens) {
+            Ok((term, rest)) => {
+                assert_eq!(term, expected_term);
+                assert_eq!(rest, remaining_tokens);
+            }
+            Err(_) => panic!("parse_term should return Ok in this case"),
+        }
+
+        // Test parsing a variable
+        let tokens = [
+            Token::Variable("Var".to_string()),
+            Token::Atom("hello".to_string()),
+            Token::RParen,
+        ];
+        let expected_term = Term::Variable("Var".to_string());
+        let remaining_tokens = &tokens[1..];
+        match parse_term(&tokens) {
+            Ok((term, rest)) => {
+                assert_eq!(term, expected_term);
+                assert_eq!(rest, remaining_tokens);
+            }
+            Err(_) => panic!("parse_term should return Ok in this case"),
+        }
+    }
 
 }
