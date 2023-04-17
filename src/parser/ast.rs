@@ -104,7 +104,7 @@ mod tests {
     use crate::parser::lexer::Token;
 
     #[test]
-    fn test_parse_term() {
+    fn test_parse_term1() {
         let tokens = vec![
             Token::Atom("father".to_string()),
             Token::LParen,
@@ -128,7 +128,7 @@ mod tests {
     } 
     
     #[test]
-    fn test_expect_token1() {
+    fn test_expect_token() {
         use super::{expect_token, ParseError, Token};
 
         let tokens = [
@@ -194,5 +194,27 @@ mod tests {
             Err(_) => panic!("parse_term should return Ok in this case"),
         }
     }
+
+    #[test]
+    fn test_parse_simple_structure() {
+        let tokens = vec![
+            Token::Atom("parent".to_string()),
+            Token::LParen,
+            Token::Atom("jim".to_string()),
+            Token::RParen,
+        ];
+        let parse_result = parse_term(&tokens);
+        let (term, remaining_tokens) = parse_result.unwrap();
+        let expected_term = Term::Structure {
+            functor: "parent".to_string(),
+            arity: 1,
+            args: vec![
+                Term::Atom("jim".to_string()),
+            ],
+        };
+        assert_eq!(term, expected_term);
+        assert!(remaining_tokens.is_empty());
+    }
+
 
 }
