@@ -1,7 +1,13 @@
 // src/parser/ast.rs
 use crate::parser::lexer::{tokenize, Token};
 
-#[derive(Debug, PartialEq)] // Added Debug derive for the Term enum
+#[derive(PartialEq, Debug, Clone)]
+pub struct Clause {
+    pub head: Term,
+    pub body: Vec<Term>,
+}
+
+#[derive(PartialEq, Debug, Clone)]
 pub enum Term {
     Atom(String),
     Variable(String),
@@ -10,11 +16,6 @@ pub enum Term {
         arity: usize,
         args: Vec<Term>,
     },
-}
-
-pub struct Clause {
-    pub head: Term,
-    pub body: Vec<Term>,
 }
 
 pub type ParseResult<T> = Result<T, ParseError>;
@@ -275,5 +276,47 @@ mod tests {
         assert_eq!(term, expected_term);
         assert!(remaining_tokens.is_empty());
     }
+/*
+    #[test]
+    fn test_parse_clause() {
+        let input = "parent(jim, ann).";
+        let tokens = tokenize(input).expect("Failed to tokenize input");
 
+        let expected_clause = Clause {
+            head: Structure {
+                functor: "parent".to_string(),
+                arity: 2,
+                args: vec![
+                    Term::Atom("jim".to_string()),
+                    Term::Atom("ann".to_string()),
+                ],
+            },
+            body: vec![],
+        };
+
+        let (parsed_clause, remaining_tokens) = parse_clause(&tokens).expect("Failed to parse clause");
+        assert_eq!(parsed_clause, expected_clause);
+        assert!(remaining_tokens.is_empty());
+    }
+
+    #[test]
+    fn test_parse_simple_program() {
+        let input = "parent(jim, ann).";
+        let clauses = parse(input).unwrap();
+        let expected_clauses = vec![
+            Clause {
+                head: Term::Structure {
+                    functor: "parent".to_string(),
+                    arity: 2,
+                    args: vec![
+                        Term::Atom("jim".to_string()),
+                        Term::Atom("ann".to_string()),
+                    ],
+                },
+                body: vec![],
+            },
+        ];
+        assert_eq!(clauses, expected_clauses);
+    }
+    */
 }
