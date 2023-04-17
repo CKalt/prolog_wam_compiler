@@ -216,5 +216,64 @@ mod tests {
         assert!(remaining_tokens.is_empty());
     }
 
+    #[test]
+    fn test_parse_structure_with_two_args() {
+        let tokens = vec![
+            Token::Atom("parent".to_string()),
+            Token::LParen,
+            Token::Atom("jim".to_string()),
+            Token::Comma,
+            Token::Atom("ann".to_string()),
+            Token::RParen,
+        ];
+        let parse_result = parse_term(&tokens);
+        let (term, remaining_tokens) = parse_result.unwrap();
+        let expected_term = Term::Structure {
+            functor: "parent".to_string(),
+            arity: 2,
+            args: vec![
+                Term::Atom("jim".to_string()),
+                Term::Atom("ann".to_string()),
+            ],
+        };
+        assert_eq!(term, expected_term);
+        assert!(remaining_tokens.is_empty());
+    }
+
+    #[test]
+    fn test_parse_nested_structure() {
+        let tokens = vec![
+            Token::Atom("parent".to_string()),
+            Token::LParen,
+            Token::Atom("jim".to_string()),
+            Token::Comma,
+            Token::Atom("child".to_string()),
+            Token::LParen,
+            Token::Atom("ann".to_string()),
+            Token::Comma,
+            Token::Atom("5".to_string()),
+            Token::RParen,
+            Token::RParen,
+        ];
+        let parse_result = parse_term(&tokens);
+        let (term, remaining_tokens) = parse_result.unwrap();
+        let expected_term = Term::Structure {
+            functor: "parent".to_string(),
+            arity: 2,
+            args: vec![
+                Term::Atom("jim".to_string()),
+                Term::Structure {
+                    functor: "child".to_string(),
+                    arity: 2,
+                    args: vec![
+                        Term::Atom("ann".to_string()),
+                        Term::Atom("5".to_string()),
+                    ],
+                },
+            ],
+        };
+        assert_eq!(term, expected_term);
+        assert!(remaining_tokens.is_empty());
+    }
 
 }
