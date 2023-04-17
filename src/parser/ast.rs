@@ -41,7 +41,6 @@ impl From<crate::parser::lexer::LexerError> for ParseError {
     }
 }
 
-#[allow(dead_code)]
 fn expect_token<'a>(expected: Token, tokens: &'a [Token]) -> ParseResult<&'a [Token]> {
     if let Some(token) = tokens.first() {
         if *token == expected {
@@ -126,5 +125,38 @@ mod tests {
         };
         assert_eq!(term, expected_term);
         assert!(remaining_tokens.is_empty());
+    } 
+    
+    #[test]
+    fn test_expect_token() {
+        use super::{expect_token, ParseError, Token};
+
+        let tokens = [
+            Token::Atom("hello".to_string()),
+            Token::Variable("Var".to_string()),
+            Token::LParen,
+        ];
+
+        // Test successful case
+        let expected = Token::Atom("hello".to_string());
+        let remaining_tokens = &tokens[1..];
+        match expect_token(expected.clone(), &tokens) {
+            Ok(result) => assert_eq!(result, remaining_tokens),
+            Err(_) => panic!("expect_token should return Ok in this case"),
+        }
+
+        // Test error case
+        let expected = Token::Variable("WrongVar".to_string());
+        match expect_token(expected, &tokens) {
+            Ok(_) => panic!("expect_token should return Err in this case"),
+            Err(e) => match e {
+                ParseError::UnexpectedToken(token) => {
+                    assert_eq!(token, Token::Atom("hello".to_string()))
+                }
+                _ => panic!("expect_token should return UnexpectedToken error"),
+            },
+        }
     }
+
+
 }
