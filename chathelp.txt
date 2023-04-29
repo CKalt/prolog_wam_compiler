@@ -1,0 +1,13 @@
+Sat, April 29, 2023: Recap From last session
+You are working on a Rust project called prolog_wam_compiler, which aims to implement a Prolog WAM (Warren Abstract Machine) compiler. The project's directory structure is not explicitly mentioned, but based on the previous conversation, it seems to include the following files:
+
+    src/lib.rs: The main entry point for the project.
+    src/parser/lexer.rs: Contains the lexer for the Prolog language.
+    src/parser/ast.rs: Contains the functions for parsing Prolog tokens into an abstract syntax tree (AST).
+    src/wam/data_structures.rs: Contains data structures related to the WAM.
+
+The work done so far has been focused on implementing and fixing the Prolog parser, specifically the parse_term and parse_structure functions in src/parser/ast.rs. The objective is to properly parse Prolog terms and structures.
+
+Several tests have been created for these functions, but some tests are failing, indicating issues in the implementation. The task now is to address these issues and make the tests pass.
+
+

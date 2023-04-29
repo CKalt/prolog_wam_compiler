@@ -21,9 +21,39 @@ pub enum Term {
 pub type ParseResult<T> = Result<T, ParseError>;
 
 pub fn parse(input: &str) -> ParseResult<Vec<Clause>> {
-    let _tokens = tokenize(input)?;
-    // TODO: Implement parsing logic
-    Ok(vec![]) // Placeholder until the parsing logic is implemented
+    let tokens = tokenize(input)?;
+    let mut clauses = Vec::new();
+
+    let mut remaining_tokens = &tokens[..];
+    while !remaining_tokens.is_empty() {
+        let (head, rest) = parse_term(remaining_tokens)?;
+        remaining_tokens = rest;
+
+        let body = if let Ok(new_remaining_tokens) = expect_token(Token::If, remaining_tokens) {
+            remaining_tokens = new_remaining_tokens;
+            let mut body_terms = Vec::new();
+
+            while let Ok((term, new_remaining_tokens)) = parse_term(remaining_tokens) {
+                remaining_tokens = new_remaining_tokens;
+                body_terms.push(term);
+
+                if let Ok(new_remaining_tokens) = expect_token(Token::And, remaining_tokens) {
+                    remaining_tokens = new_remaining_tokens;
+                } else {
+                    break;
+                }
+            }
+
+            body_terms
+        } else {
+            Vec::new()
+        };
+
+        remaining_tokens = expect_token(Token::Dot, remaining_tokens)?;
+        clauses.push(Clause { head, body });
+    }
+
+    Ok(clauses)
 }
 
 #[derive(Debug)]
@@ -276,47 +306,55 @@ mod tests {
         assert_eq!(term, expected_term);
         assert!(remaining_tokens.is_empty());
     }
-/*
+
     #[test]
     fn test_parse_clause() {
-        let input = "parent(jim, ann).";
-        let tokens = tokenize(input).expect("Failed to tokenize input");
-
+        let input = "likes(john, pizza).";
+        let parse_result = parse(input);
+        let clauses = parse_result.unwrap();
+    
         let expected_clause = Clause {
-            head: Structure {
-                functor: "parent".to_string(),
+            head: Term::Structure {
+                functor: "likes".to_string(),
                 arity: 2,
                 args: vec![
-                    Term::Atom("jim".to_string()),
-                    Term::Atom("ann".to_string()),
+                    Term::Atom("john".to_string()),
+                    Term::Atom("pizza".to_string()),
                 ],
             },
             body: vec![],
         };
-
-        let (parsed_clause, remaining_tokens) = parse_clause(&tokens).expect("Failed to parse clause");
-        assert_eq!(parsed_clause, expected_clause);
-        assert!(remaining_tokens.is_empty());
+        assert_eq!(clauses, vec![expected_clause]);
     }
 
     #[test]
-    fn test_parse_simple_program() {
-        let input = "parent(jim, ann).";
-        let clauses = parse(input).unwrap();
-        let expected_clauses = vec![
-            Clause {
-                head: Term::Structure {
-                    functor: "parent".to_string(),
+    fn test_parse_clause_with_body() {
+        let input = "likes(john, X) :- likes(X, pizza).";
+        let parse_result = parse(input);
+        let clauses = parse_result.unwrap();
+
+        let expected_clause = Clause {
+            head: Term::Structure {
+                functor: "likes".to_string(),
+                arity: 2,
+                args: vec![
+                    Term::Atom("john".to_string()),
+                    Term::Variable("X".to_string()),
+                ],
+            },
+            body: vec![
+                Term::Structure {
+                    functor: "likes".to_string(),
                     arity: 2,
                     args: vec![
-                        Term::Atom("jim".to_string()),
-                        Term::Atom("ann".to_string()),
+                        Term::Variable("X".to_string()),
+                        Term::Atom("pizza".to_string()),
                     ],
                 },
-                body: vec![],
-            },
-        ];
-        assert_eq!(clauses, expected_clauses);
+            ],
+        };
+        assert_eq!(clauses, vec![expected_clause]);
     }
-    */
 }
+    
+    

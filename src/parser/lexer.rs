@@ -1,76 +1,123 @@
+use std::iter::Peekable;
+
+fn parse_atom_or_variable<I: Iterator<Item = char>>(iter: &mut Peekable<I>) -> Result<Token, LexerError> {
+    let mut name = String::new();
+
+    while let Some(&c) = iter.peek() {
+        match c {
+            'A'..='Z' | 'a'..='z' | '0'..='9' | '_' => {
+                name.push(c);
+                iter.next();
+            }
+            _ => break,
+        }
+    }
+
+    let token = if name.chars().next().unwrap().is_uppercase() || name.starts_with('_') {
+        Token::Variable(name)
+    } else {
+        Token::Atom(name)
+    };
+
+    Ok(token)
+}
+
+fn parse_integer<I: Iterator<Item = char>>(iter: &mut Peekable<I>) -> Result<Token, LexerError> {
+    let mut number = String::new();
+
+    while let Some(&c) = iter.peek() {
+        match c {
+            '0'..='9' => {
+                number.push(c);
+                iter.next();
+            }
+            _ => break,
+        }
+    }
+
+    let value = number
+        .parse::<i64>()
+        .map_err(|_| LexerError::InvalidInteger(number))?;
+
+    Ok(Token::Integer(value))
+}
+
 pub fn skip_whitespace(input: &str) -> &str {
     input.trim_start()
 }
 
 pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
     let mut tokens = Vec::new();
-    let mut input_iter = input.chars().peekable();
+    let mut iter = input.chars().peekable();
 
-    while let Some(&c) = input_iter.peek() {
-        if c.is_whitespace() {
-            input_iter.next(); // Consume the whitespace character
-            continue; // Continue to the next iteration of the loop
-        }
-
+    while let Some(&c) = iter.peek() {
         match c {
-            'A'..='Z' | 'a'..='z' => {
-                let name = read_name(&mut input_iter);
-                if c.is_uppercase() {
-                    tokens.push(Token::Variable(name));
-                } else {
-                    tokens.push(Token::Atom(name));
-                }
+            'A'..='Z' | 'a'..='z' | '_' => {
+                // tokens.push(parse_atom_or_variable::<I>(&mut iter)?);  // fails with I undefined.
+                tokens.push(parse_atom_or_variable(&mut iter)?);
+            }
+            '0'..='9' => {
+                tokens.push(parse_integer(&mut iter)?);
             }
             '(' => {
+                iter.next();
                 tokens.push(Token::LParen);
-                input_iter.next();
             }
             ')' => {
+                iter.next();
                 tokens.push(Token::RParen);
-                input_iter.next();
             }
             ',' => {
+                iter.next();
                 tokens.push(Token::Comma);
-                input_iter.next();
             }
             '.' => {
+                iter.next();
                 tokens.push(Token::Dot);
-                input_iter.next();
             }
-            _ => return Err(LexerError::UnexpectedChar(c)),
+            ':' => {
+                iter.next();
+                if let Some(&'-') = iter.peek() {
+                    iter.next();
+                    tokens.push(Token::If);
+                } else {
+                    return Err(LexerError::UnexpectedChar(c));
+                }
+            }
+            ';' => {
+                iter.next();
+                tokens.push(Token::And);
+            }
+            _ => {
+                if c.is_whitespace() {
+                    iter.next();
+                } else {
+                    return Err(LexerError::UnexpectedChar(c));
+                }
+            }
         }
     }
 
     Ok(tokens)
 }
 
-
-fn read_name<I: Iterator<Item = char>>(iter: &mut std::iter::Peekable<I>) -> String {
-    let mut name = String::new();
-    while let Some(&c) = iter.peek() {
-        if c.is_alphanumeric() {
-            name.push(c);
-            iter.next();
-        } else {
-            break;
-        }
-    }
-    name
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Atom(String),
     Variable(String),
+    Integer(i64),
     LParen,
     RParen,
     Comma,
     Dot,
+    If,
+    And,
 }
 
 #[derive(Debug)]
 pub enum LexerError {
     UnexpectedChar(char),
+    InvalidInteger(String),
 }
 
 #[cfg(test)]
