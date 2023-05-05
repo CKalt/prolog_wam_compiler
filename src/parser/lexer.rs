@@ -1,7 +1,8 @@
 use std::iter::Peekable;
 
-fn parse_atom_or_variable<I: Iterator<Item = char>>(iter: &mut Peekable<I>) -> Result<Token, LexerError> {
+fn parse_atom_or_variable<I: Iterator<Item = char>>(first_char: char, iter: &mut Peekable<I>) -> Result<Token, LexerError> {
     let mut name = String::new();
+    name.push(first_char);
 
     while let Some(&c) = iter.peek() {
         match c {
@@ -22,24 +23,27 @@ fn parse_atom_or_variable<I: Iterator<Item = char>>(iter: &mut Peekable<I>) -> R
     Ok(token)
 }
 
-fn parse_integer<I: Iterator<Item = char>>(iter: &mut Peekable<I>) -> Result<Token, LexerError> {
-    let mut number = String::new();
+fn parse_integer<I: Iterator<Item = char>>(first_digit: char, iter: &mut Peekable<I>) -> Result<Token, LexerError> {
+    let mut value = String::new();
+    value.push(first_digit);
 
     while let Some(&c) = iter.peek() {
-        match c {
-            '0'..='9' => {
-                number.push(c);
-                iter.next();
-            }
-            _ => break,
+        if c.is_digit(10) {
+            value.push(c);
+            iter.next();
+        } else {
+            break;
         }
     }
 
-    let value = number
-        .parse::<i64>()
-        .map_err(|_| LexerError::InvalidInteger(number))?;
+    if value.is_empty() {
+        return Err(LexerError::InvalidInteger(value));
+    }
 
-    Ok(Token::Integer(value))
+    value
+        .parse::<i64>()
+        .map(Token::Number)
+        .map_err(|_| LexerError::InvalidInteger(value))
 }
 
 pub fn skip_whitespace(input: &str) -> &str {
@@ -51,13 +55,30 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
     let mut iter = input.chars().peekable();
 
     while let Some(&c) = iter.peek() {
+        println!("DEBUG: Current character: {:?}", c);
+    
         match c {
+            ' ' | '\t' | '\n' | '\r' => {
+                iter.next(); // skip whitespace
+            }
+            ',' => {
+                iter.next();
+                tokens.push(Token::Comma);
+                while let Some(&c) = iter.peek() {
+                    if c == ' ' || c == ',' {
+                        iter.next();
+                    } else {
+                        break;
+                    }
+                }
+            }
             'A'..='Z' | 'a'..='z' | '_' => {
-                // tokens.push(parse_atom_or_variable::<I>(&mut iter)?);  // fails with I undefined.
-                tokens.push(parse_atom_or_variable(&mut iter)?);
+                let first_char = iter.next().unwrap();
+                tokens.push(parse_atom_or_variable(first_char, &mut iter)?);
             }
             '0'..='9' => {
-                tokens.push(parse_integer(&mut iter)?);
+                let first_digit = iter.next().unwrap();
+                tokens.push(parse_integer(first_digit, &mut iter)?);
             }
             '(' => {
                 iter.next();
@@ -66,10 +87,6 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
             ')' => {
                 iter.next();
                 tokens.push(Token::RParen);
-            }
-            ',' => {
-                iter.next();
-                tokens.push(Token::Comma);
             }
             '.' => {
                 iter.next();
@@ -88,9 +105,17 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
                 iter.next();
                 tokens.push(Token::And);
             }
+            '[' => {
+                iter.next();
+                tokens.push(Token::LBracket);
+            }
+            ']' => {
+                iter.next();
+                tokens.push(Token::RBracket);
+            }
             _ => {
+                iter.next();
                 if c.is_whitespace() {
-                    iter.next();
                 } else {
                     return Err(LexerError::UnexpectedChar(c));
                 }
@@ -98,6 +123,7 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
         }
     }
 
+    println!("DEBUG: Final tokens: {:?}", tokens);
     Ok(tokens)
 }
 
@@ -105,9 +131,11 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
 pub enum Token {
     Atom(String),
     Variable(String),
-    Integer(i64),
+    Number(i64),
     LParen,
     RParen,
+    LBracket,
+    RBracket,
     Comma,
     Dot,
     If,
@@ -126,6 +154,7 @@ mod tests {
 
     #[test]
     fn test_token_enum() {
+        println!("Starting test_token_enum");
         let atom = Token::Atom("likes".to_string());
         let variable = Token::Variable("X".to_string());
         let left_paren = Token::LParen;
@@ -139,10 +168,12 @@ mod tests {
         assert_eq!(right_paren, Token::RParen);
         assert_eq!(comma, Token::Comma);
         assert_eq!(dot, Token::Dot);
+        println!("Ending test_token_enum");
     }
 
     #[test]
     fn test_tokenize_atoms_and_variables() {
+        println!("Starting test_tokenize_atoms_and_variables");
         let input = "likes(X, food).";
         let expected_tokens = vec![
             Token::Atom("likes".to_string()),
@@ -156,5 +187,6 @@ mod tests {
     
         let tokens = tokenize(input).unwrap();
         assert_eq!(tokens, expected_tokens);
+        println!("Ending test_tokenize_atoms_and_variables");
     }
 }

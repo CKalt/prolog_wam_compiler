@@ -50,11 +50,13 @@ mod tests {
 
     #[test]
     fn test_push_atom() {
+        println!("Starting test_push_atom");
         let term = Term::Atom("example".to_string());
         let mut emulator = WamEmulator::new();
         let index = emulator.push_term(&term);
         let cell = emulator.get_heap_cell(index).unwrap();
 
         assert_eq!(cell, &HeapCell::Constant("example".to_string()));
+        println!("Ending test_push_atom");
     }
 }
