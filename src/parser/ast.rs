@@ -39,7 +39,10 @@ pub fn parse(input: &str) -> ParseResult<Vec<Clause>> {
                 remaining_tokens = new_remaining_tokens;
                 body_terms.push(term);
 
-                if let Ok(new_remaining_tokens) = expect_token(Token::And, remaining_tokens) {
+                // Change this part
+                if let Ok(new_remaining_tokens) = expect_token(Token::And, remaining_tokens)
+                    .or(expect_token(Token::Comma, remaining_tokens))
+                {
                     remaining_tokens = new_remaining_tokens;
                 } else {
                     break;
@@ -421,6 +424,45 @@ mod tests {
         assert!(matches!(term, Term::List(_)));
         assert_eq!(remaining_tokens.len(), 0);
         println!("Ending test_parse_list");
+    }
+
+    #[test]
+    fn test_parse_clause_with_double_body() {
+        println!("Starting test_parse_clause_with_double_body");
+        let input = "parents(X, Y) :- father(X, Y), mother(X, Y).";
+        let parse_result = parse(input);
+        let clauses = parse_result.unwrap();
+
+        let expected_clause = Clause {
+            head: Term::Structure {
+                functor: "parents".to_string(),
+                arity: 2,
+                args: vec![
+                    Term::Variable("X".to_string()),
+                    Term::Variable("Y".to_string()),
+                ],
+            },
+            body: vec![
+                Term::Structure {
+                    functor: "father".to_string(),
+                    arity: 2,
+                    args: vec![
+                        Term::Variable("X".to_string()),
+                        Term::Variable("Y".to_string()),
+                    ],
+                },
+                Term::Structure {
+                    functor: "mother".to_string(),
+                    arity: 2,
+                    args: vec![
+                        Term::Variable("X".to_string()),
+                        Term::Variable("Y".to_string()),
+                    ],
+                },
+            ],
+        };
+        assert_eq!(clauses, vec![expected_clause]);
+        println!("Ending test_parse_clause_with_double_body");
     }
 }
     
