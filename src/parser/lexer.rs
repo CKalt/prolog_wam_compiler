@@ -213,4 +213,37 @@ mod tests {
         assert!(!is_valid_atom("123_invalid_start"));
         assert!(!is_valid_atom(""));
     }
+
+    #[test]
+    fn test_tokenize_with_comments() {
+        let input = r#"
+            % Single-line comment
+            sum(X, Y, Z) :-
+                /* Multi-line comment
+                with nested /* comments */
+                */
+                Z is X + Y.
+        "#;
+
+        let tokens = tokenize(input).unwrap();
+        let expected_tokens = vec![
+            Token::Atom("sum".to_string()),
+            Token::LParen,
+            Token::Variable("X".to_string()),
+            Token::Comma,
+            Token::Variable("Y".to_string()),
+            Token::Comma,
+            Token::Variable("Z".to_string()),
+            Token::RParen,
+            Token::If,
+            Token::Variable("Z".to_string()),
+            Token::Is,
+            Token::Variable("X".to_string()),
+            Token::Plus,
+            Token::Variable("Y".to_string()),
+            Token::Dot,
+        ];
+    
+        assert_eq!(tokens, expected_tokens);
+    }
 }
