@@ -1,3 +1,4 @@
+// src/main.rs
 use prolog_wam_compiler::{WamEmulator, Term};
 
 fn main() {

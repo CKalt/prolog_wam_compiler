@@ -1,3 +1,4 @@
+// src/parser/lexer.rs
 use std::iter::Peekable;
 
 fn parse_atom_or_variable<I: Iterator<Item = char>>(first_char: char, iter: &mut Peekable<I>) -> Result<Token, LexerError> {
@@ -127,6 +128,19 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
     Ok(tokens)
 }
 
+pub fn is_valid_atom(input: &str) -> bool {
+    if input.is_empty() {
+        return false;
+    }
+
+    let first_char = input.chars().next().unwrap();
+    if !first_char.is_lowercase() {
+        return false;
+    }
+
+    input.chars().all(|c| c.is_alphanumeric() || c == '_')
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Atom(String),
@@ -188,5 +202,15 @@ mod tests {
         let tokens = tokenize(input).unwrap();
         assert_eq!(tokens, expected_tokens);
         println!("Ending test_tokenize_atoms_and_variables");
+    }
+
+    #[test]
+    fn test_valid_atom() {
+        assert!(is_valid_atom("example_atom"));
+        assert!(is_valid_atom("atom_with_underscore"));
+        assert!(!is_valid_atom("AtomWithUppercase"));
+        assert!(!is_valid_atom("atom with spaces"));
+        assert!(!is_valid_atom("123_invalid_start"));
+        assert!(!is_valid_atom(""));
     }
 }

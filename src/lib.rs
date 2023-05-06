@@ -1,3 +1,4 @@
+// src/lib.rs
 pub mod wam;
 pub mod parser;
 

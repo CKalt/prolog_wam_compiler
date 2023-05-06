@@ -1,3 +1,4 @@
+// src/wam/data_structures.rs
 pub enum Term {
     Atom(String),
     Compound(String, Vec<Term>),
