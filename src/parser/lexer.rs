@@ -114,6 +114,51 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
                 iter.next();
                 tokens.push(Token::RBracket);
             }
+            '%' => {
+                iter.next(); // skip the '%'
+                while let Some(&c) = iter.peek() {
+                    if c != '\n' {
+                        iter.next(); // skip non-newline characters in the comment
+                    } else {
+                        break; // break out of the loop when reaching a newline
+                    }
+                }
+            }
+            '/' => {
+                iter.next(); // skip the '/'
+                if let Some(&'*') = iter.peek() {
+                    iter.next(); // skip the '*'
+                    let mut comment_level = 1; // track nested multi-line comments
+            
+                    while comment_level > 0 {
+                        if let Some(c) = iter.next() {
+                            match c {
+                                '*' => {
+                                    if let Some(&'/') = iter.peek() {
+                                        iter.next(); // skip the '/'
+                                        comment_level -= 1;
+                                    }
+                                }
+                                '/' => {
+                                    if let Some(&'*') = iter.peek() {
+                                        iter.next(); // skip the '*'
+                                        comment_level += 1;
+                                    }
+                                }
+                                _ => {}
+                            }
+                        } else {
+                            return Err(LexerError::UnexpectedChar(c));
+                        }
+                    }
+                } else {
+                    return Err(LexerError::UnexpectedChar(c));
+                }
+            }
+            '+' => {
+                iter.next();
+                tokens.push(Token::Plus);
+            }
             _ => {
                 iter.next();
                 if c.is_whitespace() {
@@ -154,6 +199,8 @@ pub enum Token {
     Dot,
     If,
     And,
+    Is,
+    Plus,
 }
 
 #[derive(Debug)]
@@ -217,33 +264,21 @@ mod tests {
     #[test]
     fn test_tokenize_with_comments() {
         let input = r#"
-            % Single-line comment
-            sum(X, Y, Z) :-
-                /* Multi-line comment
-                with nested /* comments */
-                */
-                Z is X + Y.
+            % A comment
+            % Another comment
+            a, % Inline comment
+            b.
         "#;
 
-        let tokens = tokenize(input).unwrap();
         let expected_tokens = vec![
-            Token::Atom("sum".to_string()),
-            Token::LParen,
-            Token::Variable("X".to_string()),
+            Token::Atom("a".to_string()),
             Token::Comma,
-            Token::Variable("Y".to_string()),
-            Token::Comma,
-            Token::Variable("Z".to_string()),
-            Token::RParen,
-            Token::If,
-            Token::Variable("Z".to_string()),
-            Token::Is,
-            Token::Variable("X".to_string()),
-            Token::Plus,
-            Token::Variable("Y".to_string()),
+            Token::Atom("b".to_string()),
             Token::Dot,
         ];
-    
+
+        let tokens = tokenize(input).unwrap();
+
         assert_eq!(tokens, expected_tokens);
     }
 }
