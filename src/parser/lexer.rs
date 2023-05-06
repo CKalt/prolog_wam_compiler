@@ -75,7 +75,12 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
             }
             'A'..='Z' | 'a'..='z' | '_' => {
                 let first_char = iter.next().unwrap();
-                tokens.push(parse_atom_or_variable(first_char, &mut iter)?);
+                if first_char == 'i' && iter.peek() == Some(&'s') {
+                    iter.next(); // skip the 's'
+                    tokens.push(Token::Is);
+                } else {
+                    tokens.push(parse_atom_or_variable(first_char, &mut iter)?);
+                }
             }
             '0'..='9' => {
                 let first_digit = iter.next().unwrap();
@@ -274,6 +279,36 @@ mod tests {
             Token::Atom("a".to_string()),
             Token::Comma,
             Token::Atom("b".to_string()),
+            Token::Dot,
+        ];
+
+        let tokens = tokenize(input).unwrap();
+
+        assert_eq!(tokens, expected_tokens);
+    }
+
+    #[test]
+    fn test_tokenize_with_comment_plus_and_is() {
+        let input = r#"
+            % Let's test whether an is expression is parsable
+            plus(A, B, C) :- C is A + B.
+        "#;
+
+        let expected_tokens = vec![
+            Token::Atom("plus".to_string()),
+            Token::LParen,
+            Token::Variable("A".to_string()),
+            Token::Comma,
+            Token::Variable("B".to_string()),
+            Token::Comma,
+            Token::Variable("C".to_string()),
+            Token::RParen,
+            Token::If,
+            Token::Variable("C".to_string()),
+            Token::Is,
+            Token::Variable("A".to_string()),
+            Token::Plus,
+            Token::Variable("B".to_string()),
             Token::Dot,
         ];
 
