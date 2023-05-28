@@ -164,6 +164,17 @@ pub fn tokenize(input: &str) -> Result<Vec<Token>, LexerError> {
                 iter.next();
                 tokens.push(Token::Plus);
             }
+            '-' => {
+                iter.next();
+                match iter.peek() {
+                    Some(c) if c.is_digit(10) => tokens.push(parse_integer('-', &mut iter)?),
+                    _ => tokens.push(Token::Minus),
+                }
+            }
+            '*' => {
+                iter.next();
+                tokens.push(Token::Multiply);
+            }
             _ => {
                 iter.next();
                 if c.is_whitespace() {
@@ -206,12 +217,17 @@ pub enum Token {
     And,
     Is,
     Plus,
+    Minus,
+    Multiply,
+    Divide,
 }
+
 
 #[derive(Debug)]
 pub enum LexerError {
     UnexpectedChar(char),
     InvalidInteger(String),
+    UnexpectedEndOfInput
 }
 
 #[cfg(test)]
@@ -316,4 +332,30 @@ mod tests {
 
         assert_eq!(tokens, expected_tokens);
     }
+        
+    #[test]
+    fn tokenize_minus() {
+        let result = tokenize("-");
+        assert_eq!(result.unwrap(), vec![Token::Minus]);
+    }
+
+    #[test]
+    fn tokenize_multiply() {
+        let result = tokenize("*");
+        assert_eq!(result.unwrap(), vec![Token::Multiply]);
+    }
+
+    #[test]
+    fn tokenize_expression() {
+        let result = tokenize("1 + 1 - 2 * 3");
+        assert_eq!(result.unwrap(), vec![
+            Token::Number(1),
+            Token::Plus,
+            Token::Number(1),
+            Token::Minus,
+            Token::Number(2),
+            Token::Multiply,
+            Token::Number(3),
+        ]);
+    }    
 }
