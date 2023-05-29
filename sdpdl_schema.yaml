@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "id": "http://example.com/sdpdl_schema.json",
+  "title": "Software Development Project Description Language",
+  "type": "object",
+  "properties": {
+    "yamlFileName": {"type": "string"},
+    "jsonSchemaPath": {"type": "string"},
+    "project": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "repository": {"type": "string"}
+      },
+      "required": ["name", "description", "repository"]
+    },
+    "developer": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "localEnvironment": {"type": "string"}
+      },
+      "required": ["name", "localEnvironment"]
+    },
+    "aws": {
+      "type": "object",
+      "properties": {
+        "accountID": {"type": "string"},
+        "region": {"type": "string"}
+      },
+      "required": ["accountID", "region"]
+    },
+    "tasks": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/task" }
+    },
+    "documentation": {
+      "type": "object",
+      "properties": {
+        "readme": {"type": "string"}
+      }
+    }
+  },
+  "required": ["yamlFileName", "jsonSchemaPath", "project", "developer", "aws", "tasks"],
+  "definitions": {
+    "task": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "description": {"type": "string"},
+        "language": {"type": "string"},
+        "scriptLocation": {"type": "string"},
+        "test": {
+          "type": "object",
+          "properties": {
+            "description": {"type": "string"},
+            "testScriptLocation": {"type": "string"}
+          },
+          "required": ["description", "testScriptLocation"]
+        },
+        "subTasks": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/task" }
+        },
+        "comments": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "git": {
+          "type": "object",
+          "properties": {
+            "branches": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "tags": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      },
+      "required": ["name", "description", "language", "scriptLocation", "test"]
+    }
+  }
+}
